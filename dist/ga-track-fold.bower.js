@@ -6,5 +6,16 @@
  * MIT License
 */
 ;(function($) {
-  console.log('The Thug Life');
+
+  $.gaTrackFold = function() {
+    if (typeof $.gaTrack === 'undefined') {
+      return this;
+    }
+
+    var pixelRatio = window.devicePixelRatio;
+
+    console.log("PR: " + pixelRatio);
+
+  };
+  
 })(jQuery);
