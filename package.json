@@ -1,0 +1,38 @@
+{
+  "name": "ga-track-fold",
+  "version": "0.0.0",
+  "description": "A library to track fold size in google analytics.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/firstandthird/ga-track-fold.git"
+  },
+  "author": "First&Third",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/firstandthird/ga-track-fold/issues"
+  },
+  "homepage": "https://github.com/firstandthird/ga-track-fold",
+  "private": true,
+  "devDependencies": {
+    "grunt": "0.4.2",
+    "grunt-bytesize": "~0.1.0",
+    "grunt-concat-bower": "~0.3.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-concat": "~0.4.0",
+    "grunt-contrib-connect": "~0.7.1",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-uglify": "~0.4.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-mocha": "~0.4.1",
+    "grunt-notify": "~0.2.13",
+    "grunt-shell": "~0.6.4",
+    "load-grunt-config":"~0.7.1",
+    "jshint-stylish": "~0.1.5",
+    "grunt-jscs-checker": "~0.4.1",
+    "grunt-contrib-less": "~0.11.0"
+  }
+}
