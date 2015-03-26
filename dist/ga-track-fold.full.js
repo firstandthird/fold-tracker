@@ -1,10 +1,3 @@
-/*!
- * ga-track-fold - A tracking library for tracking viewports
- * v0.0.0
- * https://github.com/firstandthird/ga-track-fold
- * copyright  2015
- * MIT License
-*/
 ;(function($) {
 
   $.gaTrackFold = function(options) {
@@ -15,8 +8,7 @@
       return this;
     }
 
-    if(monster.get(cookieName) === null)
-    {
+    if (monster.get(cookieName) === null) {
       // Support for window.devicePixelRatio is spotty.
       var pixelRatio = window.devicePixelRatio || 1;
       $.gaTrack('Viewport', 'Pixel Ratio', pixelRatio);
@@ -30,7 +22,7 @@
 
       $.gaTrack('Viewport', 'Size', viewWidth + 'x' + viewHeight);
 
-      monster.set(cookieName, '1'); 
+      monster.set(cookieName, '1');
     }
 
   };
@@ -38,5 +30,4 @@
   $.gaTrackFold.defaults = {
     cookieName: 'gaTrackCookie'
   };
-  
 })(jQuery);
