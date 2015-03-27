@@ -2,15 +2,11 @@
   "name": "ga-track-fold",
   "version": "0.0.0",
   "description": "A library to track fold size in google analytics.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/firstandthird/ga-track-fold.git"
   },
-  "author": "First&Third",
+  "author": "First+Third",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/firstandthird/ga-track-fold/issues"

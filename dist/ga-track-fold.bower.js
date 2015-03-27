@@ -28,6 +28,6 @@
   };
 
   $.gaTrackFold.defaults = {
-    cookieName: 'gaTrackCookie'
+    cookieName: 'gaTrackFold'
   };
 })(jQuery);

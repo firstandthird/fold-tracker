@@ -1,10 +1,7 @@
 {
   "name": "ga-track-fold",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://github.com/firstandthird/ga-track-fold",
-  "authors": [
-    "Eric Willis <eric@ecwillis.com>"
-  ],
   "description": "A tracking library for tracking viewports",
   "main": "dist/ga-track-fold.bower.js",
   "license": "MIT",
