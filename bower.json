@@ -1,6 +1,6 @@
 {
   "name": "ga-track-fold",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "homepage": "https://github.com/firstandthird/ga-track-fold",
   "description": "A tracking library for tracking viewports",
   "main": "dist/ga-track-fold.bower.js",
