@@ -14,6 +14,6 @@
   "homepage": "https://github.com/firstandthird/ga-track-fold",
   "private": true,
   "devDependencies": {
-    "grunt-set-jslib": "^0.1.3"
+    "grunt-set-jslib": "^0.2.0"
   }
 }
