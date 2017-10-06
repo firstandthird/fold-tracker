@@ -1,23 +1,24 @@
+/* eslint-disable */
 import GATrackFold from '../index';
 import test from 'tape-rollup';
 
 //ga stub
-window._gaq = { // eslint-disable-line no-underscore-dangle
+window._gaq = {
   data: [],
   clear: () => {
-    window._gaq.data = []; // eslint-disable-line no-underscore-dangle
+    window._gaq.data = [];
   },
   push: (arr) => {
-    window._gaq.data.push(arr); // eslint-disable-line no-underscore-dangle
+    window._gaq.data.push(arr);
   }
 };
 
 test('tracks the pixel ratio', assert => {
-  window._gaq.clear(); // eslint-disable-line no-underscore-dangle
+  window._gaq.clear();
 
   GATrackFold.trackPixelRatio();
 
-  const data = window._gaq.data; // eslint-disable-line no-underscore-dangle
+  const data = window._gaq.data;
   assert.equal(data.length, 1);
   assert.equal(data[0][0], '_trackEvent');
   assert.equal(data[0][1], 'Viewport');
@@ -25,11 +26,11 @@ test('tracks the pixel ratio', assert => {
 });
 
 test('tracks the viewport dimensions', assert => {
-  window._gaq.clear(); // eslint-disable-line no-underscore-dangle
+  window._gaq.clear();
 
   GATrackFold.trackViewportDimensions();
 
-  const data = window._gaq.data; // eslint-disable-line no-underscore-dangle
+  const data = window._gaq.data;
   assert.equal(data.length, 3);
   assert.equal(data[0][0], '_trackEvent');
   assert.equal(data[0][1], 'Viewport');

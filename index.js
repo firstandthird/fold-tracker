@@ -1,7 +1,7 @@
 /* eslint-env browser */
 import GATrack from 'ga-track';
 import { ready } from 'domassist';
-import Cookies from 'js-cookie';
+import CookieMonster from '@firstandthird/cookie-monster';
 
 const GATrackFold = {
   trackPixelRatio() {
@@ -22,10 +22,10 @@ const GATrackFold = {
 };
 
 ready(() => {
-  if (Cookies.get('gaTrackFold') === undefined) {
+  if (!CookieMonster.get('gaTrackFold')) {
     GATrackFold.trackPixelRatio();
     GATrackFold.trackViewportDimensions();
-    Cookies.set('gaTrackFold', 1);
+    CookieMonster.set('gaTrackFold', 1);
   }
 });
 
