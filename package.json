@@ -1,6 +1,6 @@
 {
   "name": "ga-track-fold",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A library to track fold size in Google Analytics.",
   "main": "dist/ga-track-fold.js",
   "module": "index.js",
