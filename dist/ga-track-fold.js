@@ -1,228 +1,408 @@
-/*!
- * cookie-monster - a simple cookie library
- * v0.3.0
- * https://github.com/jgallen23/cookie-monster
- * copyright Greg Allen 2014
- * MIT License
-*/
-var monster = {
-  set: function(name, value, days, path, secure) {
-    var date = new Date(),
-        expires = '',
-        type = typeof(value),
-        valueToUse = '',
-        secureFlag = '';
-    path = path || "/";
-    if (days) {
-      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-      expires = "; expires=" + date.toUTCString();
-    }
-    if (type === "object"  && type !== "undefined") {
-        if(!("JSON" in window)) throw "Bummer, your browser doesn't support JSON parsing.";
-        valueToUse = encodeURIComponent(JSON.stringify({v:value}));
-    } else {
-      valueToUse = encodeURIComponent(value);
-    }
-    if (secure){
-      secureFlag = "; secure";
-    }
+var GaTrackFold = (function () {
+'use strict';
 
-    document.cookie = name + "=" + valueToUse + expires + "; path=" + path + secureFlag;
-  },
-  get: function(name) {
-    var nameEQ = name + "=",
-        ca = document.cookie.split(';'),
-        value = '',
-        firstChar = '',
-        parsed={};
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
-      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) === 0) {
-        value = decodeURIComponent(c.substring(nameEQ.length, c.length));
-        firstChar = value.substring(0, 1);
-        if(firstChar=="{"){
-          try {
-            parsed = JSON.parse(value);
-            if("v" in parsed) return parsed.v;
-          } catch(e) {
-            return value;
-          }
+function findOne(selector, el) {
+  var found = find(selector, el);
+
+  if (found.length) {
+    return found[0];
+  }
+
+  return null;
+}
+
+function isWindow(obj) {
+  return obj != null && obj === obj.window;
+}
+
+function find(selector) {
+  var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+  if (selector instanceof HTMLElement || selector instanceof Node || isWindow(selector)) {
+    return [selector];
+  } else if (selector instanceof NodeList) {
+    return [].slice.call(selector);
+  } else if (typeof selector === 'string') {
+    var startElement = context ? findOne(context) : document;
+    return [].slice.call(startElement.querySelectorAll(selector));
+  }
+  return [];
+}
+
+function on(selector, event, cb) {
+  var capture = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+  if (Array.isArray(selector)) {
+    selector.forEach(function (item) {
+      return on(item, event, cb, capture);
+    });
+    return;
+  }
+
+  var data = {
+    cb: cb,
+    capture: capture
+  };
+
+  if (!window._domassistevents) {
+    window._domassistevents = {};
+  }
+
+  window._domassistevents['_' + event] = data;
+  var el = find(selector);
+  if (el.length) {
+    el.forEach(function (item) {
+      item.addEventListener(event, cb, capture);
+    });
+  }
+}
+
+var NativeCustomEvent = window.CustomEvent;
+
+//
+// Check for the usage of native support for CustomEvents which is lacking
+// completely on IE.
+//
+function canIuseNativeCustom() {
+  try {
+    var p = new NativeCustomEvent('t', {
+      detail: {
+        a: 'b'
+      }
+    });
+    return p.type === 't' && p.detail.a === 'b';
+  } catch (e) {
+    return false;
+  }
+}
+
+// Lousy polyfill for the Custom Event constructor for IE.
+var IECustomEvent = function CustomEvent(type, params) {
+  var e = document.createEvent('CustomEvent');
+
+  if (params) {
+    e.initCustomEvent(type, params.bubbles, params.cancelable, params.detail);
+  } else {
+    e.initCustomEvent(type, false, false, undefined);
+  }
+
+  return e;
+};
+
+var DomassistCustomEvent = canIuseNativeCustom() ? NativeCustomEvent : IECustomEvent;
+
+var SCROLLABLE_CONTAINER = void 0;
+
+function getScrollableContainer() {
+  if (SCROLLABLE_CONTAINER) {
+    return SCROLLABLE_CONTAINER;
+  }
+
+  var documentElement = window.document.documentElement;
+  var scrollableContainer = void 0;
+
+  documentElement.scrollTop = 1;
+
+  if (documentElement.scrollTop === 1) {
+    documentElement.scrollTop = 0;
+    scrollableContainer = documentElement;
+  } else {
+    scrollableContainer = document.body;
+  }
+
+  SCROLLABLE_CONTAINER = scrollableContainer;
+
+  return scrollableContainer;
+}
+
+SCROLLABLE_CONTAINER = getScrollableContainer();
+
+var setupReady = function setupReady(callbacks) {
+  return function (callback) {
+    callbacks.push(callback);
+    function execute() {
+      while (callbacks.length) {
+        var fn = callbacks.shift();
+        if (typeof fn === 'function') {
+          fn();
         }
-        if (value=="undefined") return undefined;
-        return value;
       }
     }
-    return null;
-  },
-  remove: function(name) {
-    this.set(name, "", -1);
-  },
-  increment: function(name, days) {
-    var value = this.get(name) || 0;
-    this.set(name, (parseInt(value, 10) + 1), days);
-  },
-  decrement: function(name, days) {
-    var value = this.get(name) || 0;
-    this.set(name, (parseInt(value, 10) - 1), days);
-  }
-};
-/*!
- * ga-track - Click tracking for Google Analytics
- * v0.8.0
- * https://github.com/firstandthird/ga-track
- * copyright First+Third 2015
- * MIT License
-*/
-/* global window,_gaq,ga */
-(function($) {
-  $.gaTrack = function(category, action, label) {
-    if ($.gaTrack.debug) {
-      return console.log('GA TRACK', category, action, label);
-    }
-    if (typeof window._gaq === 'undefined' && typeof window.ga === 'undefined') {
-      return this;
+    function loaded() {
+      document.removeEventListener('DOMContentLoaded', loaded);
+      execute();
     }
 
-    if(typeof window._gaq !== 'undefined') {
+    if (document.readyState !== 'loading') {
+      return execute();
+    }
+    document.addEventListener('DOMContentLoaded', loaded);
+  };
+};
+var ready = setupReady([]);
+
+/* global DocumentTouch */
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+  return typeof obj;
+} : function (obj) {
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
+var aug = function aug() {
+  var args = Array.prototype.slice.call(arguments); //eslint-disable-line prefer-rest-params
+  var org = args.shift();
+  var type = '';
+  if (typeof org === 'string' || typeof org === 'boolean') {
+    type = org === true ? 'deep' : org;
+    org = args.shift();
+    if (type === 'defaults') {
+      org = aug({}, org); //clone defaults into new object
+      type = 'strict';
+    }
+  }
+  args.forEach(function (prop) {
+    for (var propName in prop) {
+      //eslint-disable-line
+      var propValue = prop[propName];
+      // just overwrite arrays:
+      if (Array.isArray(propValue)) {
+        org[propName] = propValue;
+        continue;
+      }
+      if (type === 'deep' && (typeof propValue === 'undefined' ? 'undefined' : _typeof(propValue)) === 'object' && typeof org[propName] !== 'undefined') {
+        if (_typeof(org[propName]) !== 'object') {
+          org[propName] = propValue;
+          continue;
+        }
+        aug(type, org[propName], propValue);
+      } else if (type !== 'strict' || type === 'strict' && typeof org[propName] !== 'undefined') {
+        org[propName] = propValue;
+      }
+    }
+  });
+  return org;
+};
+var index = aug;
+
+/* eslint-env browser */
+/* global _gaq, ga */
+var GATrack = {
+  sendEvent: function sendEvent(category, action, label) {
+    if (GATrack.prefix) {
+      category = GATrack.prefix + '-' + category;
+    }
+
+    GATrack.log(category, action, label);
+
+    if (typeof window._gaq === 'undefined' && typeof window.ga === 'undefined') {
+      // eslint-disable-line no-underscore-dangle
+      return GATrack;
+    }
+
+    if (typeof window._gaq !== 'undefined') {
+      // eslint-disable-line no-underscore-dangle
       _gaq.push(['_trackEvent', category, action, label, null, false]);
     } else {
-      ga('send', 'event', category, action, label);
+      ga('send', 'event', category, action, label, { transport: 'beacon' });
     }
-  };
+  },
+  getData: function getData(element) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-  $.gaTrack.debug = false;
+    var href = element.dataset.gaTrackHref || element.getAttribute('href');
+    var category = element.dataset.gaTrack || options.category || 'ga-track';
+    var label = element.dataset.gaTrackLabel || options.label || href;
+    var action = element.dataset.gaTrackAction || options.action || element.textContent.trim();
 
-  $.gaTrackScroll = function() {
-    var $body = $('body');
-    var scrollPercent = 0;
-    var lastPos = 0;
-    var scrollTriggers = {
-      'scroll': false,
-      '25': false,
-      '50': false,
-      '75': false,
-      '100': false
-    };
+    return { href: href, category: category, label: label, action: action };
+  },
+  track: function track(element) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-    var scrollCheck = function() {
-      scrollPercent = ~~(5*Math.round((window.scrollY/($body.height()-window.innerHeight)*100)/5));
-
-      if (lastPos !== scrollPercent) {
-        lastPos = scrollPercent;
-      }
-
-      if (!scrollTriggers.scroll) {
-        scrollTriggers.scroll = true;
-        $.gaTrack('scroll', document.location.toString(), 'Scrolled');
-      }
-
-      switch(scrollPercent) {
-        case 25:
-          if (scrollTriggers['25']) break;
-          $.gaTrack('scroll', document.location.toString(), 'Scrolled 25%');
-          scrollTriggers['25'] = true;
-          break;
-        case 50:
-          if (scrollTriggers['50']) break;
-          $.gaTrack('scroll', document.location.toString(), 'Scrolled 50%');
-          scrollTriggers['50'] = true;
-          break;
-        case 75:
-          if (scrollTriggers['75']) break;
-          $.gaTrack('scroll', document.location.toString(), 'Scrolled 75%');
-          scrollTriggers['75'] = true;
-          break;
-        case 100:
-          if (scrollTriggers['100']) break;
-          $.gaTrack('scroll', document.location.toString(), 'Scrolled 100%');
-          scrollTriggers['100'] = true;
-          break;
-      }
-    };
-
-    $(window).on('scroll', scrollCheck);
-  };
-
-  $.fn.gaTrack = function(options) {
-    var opt = $.extend({}, $.gaTrack.defaults, options);
-
-    return this.each(function() {
-
-      var el = $(this);
-
-      var href = el.data('ga-track-href') || el.attr('href');
-      var target = el.attr('target');
-
-      var cat = el.data('ga-track') || opt.category || 'ga-track';
-      var label = el.data('ga-track-label') || opt.label || href;
-      var action = el.data('ga-track-action') || opt.action || el.text();
-
-      el.on('click', function(e) {
-        $.gaTrack(cat, action, label);
-        if (el.data('ga-track-href') === false) {
-          e.preventDefault();
-        } else if (href && !e.metaKey && e.which === 1 && target != '_blank') {
-          e.preventDefault();
-          setTimeout(function() {
-            window.location = href;
-          }, opt.delay);
-        }
+    if (Array.isArray(element)) {
+      element.forEach(function (data) {
+        find(data.element).forEach(function (el) {
+          GATrack.track(el, data);
+        });
       });
 
+      return;
+    }
+
+    if (typeof element.dataset.gaTrackInitialised !== 'undefined') {
+      return;
+    }
+
+    element.dataset.gaTrackInitialised = true;
+
+    options = index({}, GATrack.defaults, options);
+
+    this.log('tracking', element, options);
+    on(element, 'click', function (event) {
+      GATrack.onTrackedClick(element, event, options);
     });
-  };
+  },
+  onTrackedClick: function onTrackedClick(element, event, options) {
+    var data = GATrack.getData(element, options);
+    var target = element.getAttribute('target');
 
-  $.gaTrack.defaults = {
+    GATrack.sendEvent(data.category, data.action, data.label);
+
+    if (element.dataset.gaTrackHref === 'false') {
+      event.preventDefault();
+    } else if (data.href && !event.metaKey && event.which === 1 && target !== '_blank') {
+      event.preventDefault();
+      setTimeout(function () {
+        window.location = data.href;
+      }, options.delay);
+    }
+  },
+  autotrack: function autotrack() {
+    var elements = find('[data-ga-track]');
+
+    elements.forEach(function (element) {
+      GATrack.track(element);
+    });
+  },
+  log: function log() {
+    if (GATrack.debug) {
+      var _console;
+
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      (_console = console).log.apply(_console, ['GATRACK'].concat(args)); //eslint-disable-line no-console
+    }
+  },
+
+
+  debug: _typeof(window.localStorage) === 'object' && window.localStorage.getItem('GATrackDebug'),
+  prefix: null,
+  defaults: {
     delay: 200
-  };
+  }
+};
 
-  //data-api
-  $(function() {
-    $('[data-ga-track]').gaTrack();
+GATrack.debug = _typeof(window.localStorage) === 'object' && window.localStorage.getItem('GATrackDebug');
+ready(GATrack.autotrack);
+
+function set$1(name, value) {
+  var days = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+  var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+  var domain = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+  var secure = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
+  var date = new Date();
+  var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+
+  var expires = '';
+  var valueToUse = '';
+  var secureFlag = '';
+  var domainFlag = '';
+
+  if (days) {
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    expires = '; expires=' + date.toUTCString();
+  }
+
+  if (type === 'object' && type !== 'undefined') {
+    valueToUse = encodeURIComponent(JSON.stringify({ value: value }));
+  } else {
+    valueToUse = encodeURIComponent(value);
+  }
+
+  if (secure) {
+    secureFlag = '; secure';
+  }
+
+  if (domain) {
+    domainFlag = '; domain=' + encodeURIComponent(domain);
+  }
+
+  document.cookie = name + '=' + valueToUse + expires + '; path=' + path + secureFlag + domainFlag;
+}
+
+function get$1(name) {
+  var nameEQ = name + '=';
+  var split = document.cookie.split(';');
+  var value = null;
+
+  split.forEach(function (item) {
+    var cleaned = item.trim();
+
+    if (cleaned.indexOf(nameEQ) === 0) {
+      value = decodeURIComponent(cleaned.substring(nameEQ.length, cleaned.length));
+
+      if (value.substring(0, 1) === '{') {
+        try {
+          value = JSON.parse(value);
+          value = value.value || null;
+        } catch (e) {
+          return;
+        }
+      }
+
+      if (value === 'undefined') {
+        value = undefined;
+      }
+    }
   });
 
+  return value;
+}
 
-})(jQuery);
+function remove(name) {
+  set$1(name, '', -1);
+}
 
-;(function($) {
+function increment(name, days) {
+  var value = get$1(name) || 0;
+  set$1(name, ~~value + 1, days);
+}
 
-  $.gaTrackFold = function(options) {
-    var opt = $.extend({}, $.gaTrackFold.defaults, options);
-    var cookieName = opt.cookieName || $.gaTrackFold.defaults.cookieName; // In case some one sets the options.cookieName to falsey
+function decrement(name, days) {
+  var value = get$1(name) || 0;
+  set$1(name, ~~value - 1, days);
+}
 
-    var groupCeiling = function(num) {
-      return Math.ceil(num / 100) * 100;
-    };
+var CookieMonster = {
+  set: set$1,
+  get: get$1,
+  remove: remove,
+  increment: increment,
+  decrement: decrement
+};
 
-    if (typeof $.gaTrack === 'undefined') {
-      return this;
-    }
+/* eslint-env browser */
+var GATrackFold = {
+  trackPixelRatio: function trackPixelRatio() {
+    var pixelRatio = window.devicePixelRatio || 1;
+    GATrack.sendEvent('Viewport', 'Pixel Ratio', pixelRatio);
+  },
+  trackViewportDimensions: function trackViewportDimensions() {
+    var viewWidth = window.innerWidth || 0;
+    var viewHeight = window.innerHeight || 0;
+    viewWidth = Math.ceil(viewWidth / 100) * 100;
+    viewHeight = Math.ceil(viewHeight / 100) * 100;
 
-    if (monster.get(cookieName) === null) {
-      // Support for window.devicePixelRatio is spotty.
-      var pixelRatio = window.devicePixelRatio || 1;
-      $.gaTrack('Viewport', 'Pixel Ratio', pixelRatio);
+    GATrack.sendEvent('Viewport', 'Width', viewWidth);
+    GATrack.sendEvent('Viewport', 'Height', viewHeight);
+    GATrack.sendEvent('Viewport', 'Size', viewWidth + 'x' + viewHeight + '!');
+  }
+};
 
-      // windo.innerWidth and window.innerHeight seem to be the most widely accepted
-      var viewWidth = window.innerWidth || 0;
-      viewWidth = groupCeiling(viewWidth);
+ready(function () {
+  if (!CookieMonster.get('gaTrackFold')) {
+    GATrackFold.trackPixelRatio();
+    GATrackFold.trackViewportDimensions();
+    CookieMonster.set('gaTrackFold', 1);
+  }
+});
 
-      $.gaTrack('Viewport', 'Width', viewWidth);
+return GATrackFold;
 
-      var viewHeight = window.innerHeight || 0;
-      viewHeight = groupCeiling(viewHeight);
+}());
 
-      $.gaTrack('Viewport', 'Height', viewHeight);
-
-      $.gaTrack('Viewport', 'Size', viewWidth + 'x' + viewHeight);
-
-      monster.set(cookieName, '1');
-    }
-
-  };
-
-  $.gaTrackFold.defaults = {
-    cookieName: 'gaTrackFold'
-  };
-})(jQuery);
+//# sourceMappingURL=ga-track-fold.js.map
