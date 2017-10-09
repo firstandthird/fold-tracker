@@ -23,6 +23,7 @@ test('tracks the pixel ratio', assert => {
   assert.equal(data[0][0], '_trackEvent');
   assert.equal(data[0][1], 'Viewport');
   assert.equal(data[0][2], 'Pixel Ratio');
+  assert.end();
 });
 
 test('tracks the viewport dimensions', assert => {
@@ -41,4 +42,5 @@ test('tracks the viewport dimensions', assert => {
   assert.equal(data[2][0], '_trackEvent');
   assert.equal(data[2][1], 'Viewport');
   assert.equal(data[2][2], 'Size');
+  assert.end();
 });
